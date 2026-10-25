@@ -1,0 +1,17 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.StormAssistant" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/aep_gold</item>
+        <item name="colorPrimaryVariant">@color/aep_gold_dark</item>
+        <item name="colorOnPrimary">@color/aep_navy_dark</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/aep_blue</item>
+        <item name="colorSecondaryVariant">@color/aep_navy_surface</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">@color/aep_navy_dark</item>
+        <item name="android:navigationBarColor">@color/aep_navy_dark</item>
+        <item name="android:windowBackground">@color/aep_navy_dark</item>
+    </style>
+</resources>

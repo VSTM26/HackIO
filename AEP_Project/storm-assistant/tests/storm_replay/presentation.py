@@ -11,6 +11,23 @@ from typing import Callable
 from services.events.audit import safe_value
 
 
+def _is_interactive() -> bool:
+    """Return whether standard input is an interactive user terminal."""
+    try:
+        if not sys.stdin.isatty():
+            return False
+        if sys.platform == "win32":
+            import ctypes
+            import msvcrt
+
+            handle = msvcrt.get_osfhandle(sys.stdin.fileno())
+            mode = ctypes.c_ulong()
+            return bool(ctypes.windll.kernel32.GetConsoleMode(handle, ctypes.byref(mode)))
+        return True
+    except Exception:
+        return False
+
+
 @dataclass
 class Playback:
     """Wall-clock pacing independent of simulated timestamps and alert rules."""
@@ -27,7 +44,7 @@ class Playback:
         if self.speed not in ("instant", "fast", "normal"):
             raise ValueError("speed must be instant, fast, or normal")
         if self.interactive is None:
-            self.interactive = sys.stdin.isatty()
+            self.interactive = _is_interactive()
 
     def wait(self, sim_time: datetime) -> None:
         """Wait only between visible frames; never change the supplied domain clock."""

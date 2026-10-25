@@ -218,3 +218,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AEP Challenge large data and raw archives
+data/raw/
+data/extracted/
+*.zip
+*.shp
+*.shx
+*.dbf
+*.sbn
+*.sbx
+*.cpg
+AEP_Project/storm-assistant/data/raw/
+AEP_Project/storm-assistant/data/extracted/
+AEP_Project/storm-assistant/data/challenge/raw/
+AEP_Project/storm-assistant/data/challenge/extracted/
+*.apk
+StormAlert.apk
+android_app/app/build/
+android_app/.gradle/
+android_app/local.properties

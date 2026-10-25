@@ -1,0 +1,242 @@
+=== PAGE 1 ===
+ ​
+​
+       HACKOHI/O 2026 | CHALLENGE BRIEF 
+HACKOHI/O 2026 
+AI OUTAGE​
+CONCIERGE 
+Predict. Explain. Prepare. Communicate. 
+A utility modernization challenge powered by anonymized outage damage, geospatial, 
+network, and restoration data. 
+ 
+THE SCENARIO 
+A major storm is approaching 
+THE USER 
+A customer seeking clear 
+guidance 
+THE MISSION 
+Turning complex operational data 
+into trusted decisions 
+ 
+AI Outage Concierge • Hack/OHIO 2026 AEP Challenge |  1 
+
+=== PAGE 2 ===
+ ​
+​
+       HACKOHI/O 2026 | CHALLENGE BRIEF 
+Challenge Overview 
+Design an AI-powered assistant that helps customers navigate storm-related outage 
+uncertainty. 
+The Challenge 
+A major storm is approaching. Customers need timely, personalized, and understandable answers before an 
+outage occurs and throughout restoration. Your team will build an AI-powered customer assistant that combines 
+predictive analytics, geospatial context, network relationships, operational restoration inputs, and customer 
+communication design. 
+ 
+The customer should be able to ask: 
+• “Will I lose power?”   
+• “How long could restoration take?”   
+• “What should I do to prepare?”   
+• “Do I qualify for outage alerts?” 
+ 
+Your Mission 
+●​
+Estimate the likelihood of an outage for an anonymized premise, circuit, or location. 
+●​
+Estimate a credible restoration time range using known or simulated damage and operational conditions. 
+●​
+Provide clear preparation and safety recommendations tailored to the customer's context. 
+●​
+Determine alert eligibility and recommend proactive communication and escalation triggers. 
+●​
+Explain the key factors behind every prediction without exposing sensitive operational or customer data. 
+Why This Challenge Matters 
+Value 
+What success looks like 
+Customer impact 
+Customers receive useful guidance before, during, and after a storm. 
+Utility modernization 
+Teams connect AI, geospatial analysis, network topology, and restoration 
+operations. 
+Operational realism 
+Recommendations reflect damage types, dependencies, labor, travel, and 
+restoration sequencing. 
+Responsible AI 
+Predictions are transparent, privacy-conscious, safe, and appropriately uncertain. 
+ 
+Intended Users 
+Primary users are residential customers. Teams may also support anonymized priority locations such as 
+life-support customers, water-treatment facilities, hospitals, schools, or other critical loads, provided the 
+experience protects identity and avoids revealing sensitive locations. 
+ 
+AI Outage Concierge • Hack/OHIO 2026 AEP Challenge |  2 
+
+=== PAGE 3 ===
+ ​
+​
+       HACKOHI/O 2026 | CHALLENGE BRIEF 
+Challenge Requirements 
+Build a working experience that demonstrates prediction, restoration reasoning, 
+recommendation quality, and proactive communication. 
+1. Outage Risk Prediction 
+●​
+Accept an anonymized premise, circuit, or map location as the customer context. 
+●​
+Produce an outage-risk estimate or clearly defined risk band. 
+●​
+Use relevant signals such as historical damage patterns, asset type, circuit or protective-device relationships, 
+geospatial proximity, and available storm characteristics. 
+●​
+Show the most important contributing factors and communicate uncertainty. 
+2. Restoration-Time Estimate 
+●​
+Provide an estimated restoration duration or range rather than a false-precision promise. 
+●​
+Consider damage type and quantity, upstream dependencies, step-restoration opportunities, labor-hour 
+assumptions, travel, and nonproductive time. 
+●​
+Update the estimate when damage, crew, access, or network assumptions change. 
+●​
+Distinguish model output from confirmed utility restoration information. 
+3. Personalized Preparation Guidance 
+●​
+Provide customer-friendly actions appropriate to the predicted risk and expected duration. 
+●​
+Include safety, practical preparation guidance and clearly label emergencies or safety messages. 
+●​
+Adapt recommendations for declared accessibility, medical, or critical-facility needs without inferring sensitive 
+attributes. 
+4. Alerts and Proactive Communications 
+●​
+Determine whether the scenario qualifies for outage-related alerts using documented rules or challenge 
+assumptions. 
+●​
+Recommend notification timing, channel, and escalation triggers. 
+●​
+Generate concise, plain-language messages for pre-storm, outage-confirmed, estimate-updated, and 
+restoration-complete scenarios. 
+5. Explainability and Responsible Use 
+●​
+Make the reason for each recommendation understandable to a nontechnical customer. 
+●​
+Disclose confidence, major assumptions, missing data, and conditions that could change the answer. 
+●​
+Avoid exposing raw personal information, employee contact details, precise sensitive-facility locations, or 
+internal-only operational fields. 
+●​
+Include a clear fallback when the model cannot make a reliable prediction. 
+ 
+AI Outage Concierge • Hack/OHIO 2026 AEP Challenge |  3 
+
+=== PAGE 4 ===
+ ​
+​
+       HACKOHI/O 2026 | CHALLENGE BRIEF 
+Challenge Data Package 
+The organizer-provided package should use sanitized, challenge-scoped extracts. Final 
+availability may vary. 
+Core Data Sources 
+Data source 
+Potential fields or content 
+How teams may use it 
+ARCOS damage 
+assessment 
+Anonymized outage or incident identifier, event, region, district, crew 
+area, substation, circuit, report time, repair status and date, asset 
+type, damage type, quantity, selected resource indicators, masked 
+coordinates or geospatial key. (Shape file format) 
+Damage-pattern analysis, feature 
+engineering, restoration-duration 
+targets, spatial clustering. 
+Circuit GIS 
+extracts 
+A set of selected circuits, anonymized circuit name identifiers, 
+protective devices, and circuit relationships. (Shape file format) 
+Map experience, proximity signals, 
+network context, visualization. 
+Upline flow / 
+topology 
+Premise to upline equipment relationships and upstream 
+dependencies. (TXT file) 
+Impact tracing, step restoration, 
+dependency-aware prioritization. 
+STORMS 
+labor-hour 
+reference 
+Representative labor hours by damage type. (Excel spreadsheet) 
+Baseline restoration effort and 
+scenario calculations. 
+Indirect labor 
+assumptions 
+Representative travel and nonproductive-time multipliers, potentially 
+averaged across operating companies. (Excel spreadsheet) 
+Operationally realistic duration 
+estimates. 
+Priority-location 
+indicators 
+Publicly available spatial and attribute data for hospitals, fire 
+departments, and ambulance locations.  (Shape file format) 
+Prioritization scenarios and tailored 
+communications. 
+Structure 
+diagrams 
+Sample distribution structure diagrams. (PDF) 
+Help to identify what materials might 
+need to be replaced based on 
+damage type.  
+ 
+ 
+AI Outage Concierge • Hack/OHIO 2026 AEP Challenge |  4 
+
+=== PAGE 5 ===
+ ​
+​
+       HACKOHI/O 2026 | CHALLENGE BRIEF 
+Solution Expectations 
+Teams may choose their own architecture and modeling approach. The submission must make 
+the end-of-the-end customer journey clear. 
+Minimum Viable Demonstration 
+1.​ A customer selects or enters an anonymized location. 
+2.​ The assistant returns an outage-risk prediction with a confidence indicator and explanation. 
+3.​ The customer explores damage or restoration scenarios and receives an estimated restoration range. 
+4.​ The assistant recommends preparation actions and indicates alert eligibility. 
+5.​ The solution generates at least one proactive customer communication. 
+6.​ The team shows how privacy, safety, uncertainty, and model limitations are handled. 
+Suggested Technical Components 
+Layer 
+Examples of acceptable approaches 
+Experience 
+Conversational interface, web or mobile prototype, map-based journey, 
+accessible visualization. 
+Data 
+Curated tabular extract, geospatial layers, topology graph, and synthetic 
+customer profiles were needed. 
+Analytics 
+Classification or risk scoring, regression or survival-style duration estimate, 
+rules, graph analysis, geospatial features. 
+AI assistant 
+Retrieval and orchestration, natural-language explanation, scenario reasoning, 
+communication generation. 
+Controls 
+Prompt and input validation, confidence thresholds, human escalation, privacy 
+filters, audit trail. 
+ 
+Recommended Output Design 
+●​
+Use a risk band and confidence level that are easy to understand. 
+●​
+Present restoration as a range with the factors most likely to move it. 
+●​
+Separate confirmed facts, model estimates, and customer actions. 
+●​
+Use plain language and accessible interaction patterns. 
+●​
+Allow judges to change at least one scenario input and observe the response. 
+ 
+Important 
+Teams are not expected to reproduce a production outage-management system. A focused, credible 
+prototype with transparent assumptions is preferred over broad functionality that cannot be 
+explained. 
+ 
+AI Outage Concierge • Hack/OHIO 2026 AEP Challenge |  5 
+

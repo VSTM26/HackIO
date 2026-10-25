@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEP Outage Concierge — Customer Portal</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg-dark: #0a1128;
+      --card-bg: #111c44;
+      --card-border: #1e295f;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #0284c7;
+      --accent-gold: #f59e0b;
+      --status-normal: #10b981;
+      --status-warning: #f59e0b;
+      --status-outage: #ef4444;
+      --status-restored: #06b6d4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* Header Nav */
+    header {
+      background: #0c1433;
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+    }
+    .brand span { color: var(--accent-gold); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-btn-active {
+      background: #0284c7;
+      color: white;
+    }
+    .nav-btn-secondary {
+      background: #1e295f;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    .nav-btn-secondary:hover {
+      background: #334155;
+      color: white;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Premise Selector Card */
+    .selector-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .selector-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    select, input {
+      flex: 1;
+      min-width: 280px;
+      background: #0a1128;
+      color: white;
+      border: 1px solid #2a3a75;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    select:focus, input:focus {
+      border-color: #38bdf8;
+    }
+    .btn-search {
+      background: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-search:hover { background: #0369a1; }
+
+    .quick-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      background: #192557;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      border-radius: 9999px;
+      cursor: pointer;
+      border: 1px solid #273674;
+      transition: all 0.2s;
+    }
+    .chip:hover, .chip.active {
+      background: #0284c7;
+      color: white;
+      border-color: #38bdf8;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1a2552;
+      padding-bottom: 10px;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+    }
+    .status-normal { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .status-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+    .status-outage { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+    /* Category Pill */
+    .pillar-tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .pillar-fact { background: #064e3b; color: #6ee7b7; }
+    .pillar-estimate { background: #3b2a0c; color: #fde047; }
+    .pillar-action { background: #1e1b4b; color: #c7d2fe; }
+
+    /* Key-Value List */
+    .kv-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+    .kv-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #0c1433;
+      border-radius: 6px;
+    }
+    .kv-label { color: var(--text-muted); }
+    .kv-val { font-weight: 600; color: #f8fafc; text-align: right; }
+
+    /* Progress bar */
+    .bar-wrap {
+      background: #0a1128;
+      height: 10px;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 6px;
+      border: 1px solid #202d62;
+    }
+    .bar-fill {
+      height: 100%;
+      transition: width 0.4s ease;
+    }
+
+    /* Bullet list */
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.88rem;
+    }
+    .bullet-list li {
+      position: relative;
+      padding-left: 20px;
+      color: #cbd5e1;
+    }
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 6px;
+      color: #38bdf8;
+      font-weight: bold;
+    }
+
+    /* ETR Box */
+    .etr-box {
+      background: #0c1538;
+      border: 1px solid #233372;
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .etr-main {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+    .etr-range {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Interactive Simulation Bar */
+    .sim-bar {
+      background: #141f4d;
+      border: 1px solid #283777;
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .sim-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sim-btn {
+      background: #1e295f;
+      color: white;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sim-btn:hover { background: #0284c7; }
+    .sim-btn-danger { background: #991b1b; }
+    .sim-btn-danger:hover { background: #b91c1c; }
+    .sim-btn-success { background: #065f46; }
+    .sim-btn-success:hover { background: #047857; }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+      font-size: 0.8rem;
+      border-top: 1px solid #141c3a;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-bolt-lightning"></i>
+      <span>AEP</span> Outage Concierge
+    </div>
+    <div class="nav-links">
+      <a href="/customer" class="nav-btn nav-btn-active">
+        <i class="fa-solid fa-user-shield"></i> Customer Portal
+      </a>
+      <a href="/operator" class="nav-btn nav-btn-secondary">
+        <i class="fa-solid fa-sliders"></i> Operator Simulator
+      </a>
+      <a href="/user" class="nav-btn nav-btn-secondary">
+        <i class="fa-solid fa-display"></i> Public Board
+      </a>
+      <a href="/download-apk" class="nav-btn nav-btn-secondary" style="border-color: #f59e0b; color: #fbbf24;">
+        <i class="fa-brands fa-android"></i> Mobile App APK
+      </a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Premise Selector -->
+    <section class="selector-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <h2 style="font-size: 1.15rem; font-weight: 700;">Select Customer Premise or Location</h2>
+        <span id="data-source-badge" style="font-size: 0.75rem; background: #064e3b; color: #34d399; padding: 3px 8px; border-radius: 4px; font-weight: 600;">
+          <i class="fa-solid fa-database"></i> Verified AEP Challenge Dataset (Circuit 0000027)
+        </span>
+      </div>
+
+      <div class="selector-row">
+        <select id="premise-select" onchange="onPremiseChange(this.value)">
+          <option value="">Loading customer locations...</option>
+        </select>
+        <button class="btn-search" onclick="refreshCustomerData()">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Quick Preset Chips -->
+      <div class="quick-chips">
+        <span style="font-size: 0.8rem; color: #94a3b8; align-self: center;">Quick Picks:</span>
+        <button class="chip active" onclick="pickPreset('PREM-VA-58784')">🏥 Life Support (Overhead, Elliston)</button>
+        <button class="chip" onclick="pickPreset('PREM-VA-57282')">⚡ Residential (Underground Feeder)</button>
+        <button class="chip" onclick="pickPreset('PREM-VA-80138')">⚡ Residential (Overhead Span)</button>
+        <button class="chip" onclick="pickPreset('CUST-001')">🧪 Synthetic Demo (Avery - Medical)</button>
+      </div>
+    </section>
+
+    <!-- Interactive Scenario Controls (Alters live grid conditions) -->
+    <section class="sim-bar">
+      <div>
+        <div style="font-size: 0.85rem; font-weight: 700; color: #e2e8f0;">
+          <i class="fa-solid fa-flask"></i> Interactive Scenario Controls
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8;">
+          Inject real-time physical damage or dispatch crews to see customer impact & restoration shift live.
+        </div>
+      </div>
+      <div class="sim-controls">
+        <button class="sim-btn sim-btn-danger" onclick="injectDamage('fuse_cutout')">
+          <i class="fa-solid fa-triangle-exclamation"></i> Blow Upstream Fuse
+        </button>
+        <button class="sim-btn sim-btn-danger" onclick="injectDamage('transformer_50kva')">
+          <i class="fa-solid fa-bolt"></i> Damage Transformer
+        </button>
+        <button class="sim-btn sim-btn-success" onclick="resolveAllDamage()">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Restore & Energize
+        </button>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; margin-left: 8px;">
+          <span>Crews:</span>
+          <select id="crew-select" style="min-width: 70px; padding: 4px 8px;" onchange="updateCrews(this.value)">
+            <option value="1">1 Crew</option>
+            <option value="2" selected>2 Crews</option>
+            <option value="3">3 Crews</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Dashboard 2x2 Grid -->
+    <div class="dashboard-grid">
+
+      <!-- Card 1: Operational Status & Upstream Supply Hierarchy -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-tower-broadcast"></i> Current Power Status</span>
+          <span class="pillar-tag pillar-fact">Confirmed Fact</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #0c1538; border-radius: 8px;">
+          <div>
+            <div id="status-display" class="status-badge status-normal">
+              <i class="fa-solid fa-circle-check"></i> NORMAL SERVICE
+            </div>
+            <div id="status-summary" style="font-size: 0.85rem; color: #cbd5e1; margin-top: 6px;">
+              Power is flowing normally from distribution feeder.
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: #94a3b8;">Priority Tier</div>
+            <div id="priority-tier" style="font-weight: 700; color: #38bdf8;">Standard Residential</div>
+          </div>
+        </div>
+
+        <div class="kv-list">
+          <div class="kv-item">
+            <span class="kv-label">Service Construction</span>
+            <span class="kv-val" id="val-service-type">Overhead Distribution</span>
+          </div>
+          <div class="kv-item">
+            <span class="kv-label">Feeder / Grid Zone</span>
+            <span class="kv-val" id="val-grid-zone">Circuit 0000027</span>
+          </div>
+          <div class="kv-item">
+            <span class="kv-label">Regional Location</span>
+            <span class="kv-val" id="val-region">Elliston, VA</span>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+            <i class="fa-solid fa-diagram-project"></i> Upstream Electrical Dependency Status
+          </div>
+          <div id="upstream-summary" style="font-size: 0.85rem; color: #cbd5e1; background: #0a1128; padding: 10px 14px; border-radius: 6px; border-left: 3px solid #0284c7;">
+            All upstream protective equipment (fuses, electronic reclosers, circuit breakers) energized and operational.
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Outage-Risk Forecast & Explainability -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-cloud-bolt"></i> Outage-Risk Assessment</span>
+          <span class="pillar-tag pillar-estimate">Model Estimate</span>
+        </div>
+
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <div>
+            <span id="risk-score-display" style="font-size: 2.2rem; font-weight: 900; color: #f59e0b;">15%</span>
+            <span id="risk-band-display" style="font-size: 1.1rem; font-weight: 700; color: #cbd5e1; margin-left: 8px;">Low Risk</span>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; color: #94a3b8;">Assessment Confidence</span>
+            <div id="confidence-display" style="font-weight: 700; color: #34d399;">High Confidence</div>
+          </div>
+        </div>
+
+        <div class="bar-wrap">
+          <div id="risk-bar" class="bar-fill" style="width: 15%; background: #10b981;"></div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+            Key Contributing Signals
+          </div>
+          <ul id="risk-factors" class="bullet-list">
+            <li>Premise is outside immediate storm center envelope</li>
+            <li>Overhead distribution service exposed to surrounding tree branches</li>
+          </ul>
+        </div>
+
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+            Sensitivity & What Could Change
+          </div>
+          <ul id="risk-sensitivity" class="bullet-list" style="color: #94a3b8; font-size: 0.82rem;">
+            <li>Wind gusts exceeding 50 mph would elevate limb break and fuse tripping probability.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Card 3: Labor-Grounded Restoration (ETR) -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-wrench"></i> Estimated Restoration (ETR)</span>
+          <span class="pillar-tag pillar-estimate">Labor Grounded</span>
+        </div>
+
+        <div id="etr-active-container">
+          <div class="etr-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Most Likely Restoration</span>
+              <span id="etr-duration" style="font-size: 0.8rem; font-weight: 700; color: #f59e0b;">—</span>
+            </div>
+            <div id="etr-likely" class="etr-main">No Active Outage</div>
+            <div id="etr-range" class="etr-range">Service is currently energized.</div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+              Labor Unit Breakdown (Install_Labor_HackOHIO.xlsx)
+            </div>
+            <div class="kv-list">
+              <div class="kv-item">
+                <span class="kv-label">Direct Compatible Unit (CU) Hours</span>
+                <span class="kv-val" id="val-direct-cu">0.0h</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Indirect Labor Multiplier (ILM)</span>
+                <span class="kv-val" id="val-ilm">4.5x (Drive, Staging, Safety)</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Assigned Field Line Crews</span>
+                <span class="kv-val" id="val-crews">2 Active Crews</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+              Methodology Assumptions & Unconfirmed Factors
+            </div>
+            <ul id="etr-assumptions" class="bullet-list" style="font-size: 0.82rem; color: #94a3b8;">
+              <li>Applies standard utility 4.5x indirect labor multiplier for travel, site safety tailboard, and material staging.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Personalized Actions & Alert Eligibility -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-list-check"></i> Personalized Actions & Alerts</span>
+          <span class="pillar-tag pillar-action">Recommended Actions</span>
+        </div>
+
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+            Action Checklist for this Premise
+          </div>
+          <ul id="prep-checklist" class="bullet-list">
+            <li>Fully charge mobile phones, laptops, and portable emergency power banks.</li>
+            <li>Keep refrigerator and freezer doors closed to preserve food coolness.</li>
+          </ul>
+        </div>
+
+        <div style="margin-top: 8px;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+            Alert Eligibility & Transparency
+          </div>
+          <div class="kv-list">
+            <div class="kv-item">
+              <span class="kv-label">Notification Channel</span>
+              <span class="kv-val" id="val-consent">Opted-in (SMS Priority Emergency Channel)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Quiet Hours Exemption</span>
+              <span class="kv-val" id="val-quiet-hours">Standard (Active During Storm Warnings)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Message Throttling</span>
+              <span class="kv-val">Protected (1 update per status shift)</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 8px;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">
+            Recent Notifications Sent to this Premise
+          </div>
+          <div id="recent-notifications-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.78rem; color: #64748b;">No recent automated alerts dispatched.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer>
+    AEP HackOHI/O 2026 AI Outage Concierge • Verified against official datasets (Data1, Data2, matched_upstream, Install_Labor_HackOHIO)
+  </footer>
+
+  <script>
+    // State
+    let currentPremiseId = 'PREM-VA-58784';
+    let currentProfile = null;
+
+    // Helper: Escape HTML to avoid XSS
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadPremiseOptions();
+      await fetchCustomerProfile(currentPremiseId);
+      setupWebSocket();
+    });
+
+    // Load Premise Options
+    async function loadPremiseOptions() {
+      try {
+        const res = await fetch('/api/customer/premises');
+        const premises = await res.json();
+        const select = document.getElementById('premise-select');
+        select.innerHTML = '';
+
+        premises.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.premise_id;
+          opt.textContent = p.label;
+          if (p.premise_id === currentPremiseId) opt.selected = true;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error('Failed to load premises:', err);
+      }
+    }
+
+    // Premise Selection
+    function onPremiseChange(val) {
+      if (!val) return;
+      currentPremiseId = val;
+      updateActiveChip(val);
+      fetchCustomerProfile(val);
+    }
+
+    function pickPreset(id) {
+      currentPremiseId = id;
+      const select = document.getElementById('premise-select');
+      select.value = id;
+      updateActiveChip(id);
+      fetchCustomerProfile(id);
+    }
+
+    function updateActiveChip(id) {
+      document.querySelectorAll('.chip').forEach(c => {
+        if (c.getAttribute('onclick').includes(id)) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+    }
+
+    // Fetch Profile
+    async function fetchCustomerProfile(premiseId) {
+      try {
+        const res = await fetch(`/api/customer/profile?premise_id=${encodeURIComponent(premiseId)}`);
+        if (!res.ok) throw new Error('Customer lookup failed');
+        const data = await res.json();
+        currentProfile = data;
+        renderCustomerProfile(data);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    }
+
+    function refreshCustomerData() {
+      fetchCustomerProfile(currentPremiseId);
+    }
+
+    // Render Data into UI
+    function renderCustomerProfile(data) {
+      // 1. General & Operational Status
+      const premise = data.premise || {};
+      const power = data.power_status || {};
+      const statusDisp = document.getElementById('status-display');
+      const statusSummary = document.getElementById('status-summary');
+
+      document.getElementById('val-service-type').textContent = premise.service_type || 'Overhead';
+      document.getElementById('val-grid-zone').textContent = premise.grid_zone || 'Circuit 0000027';
+      document.getElementById('val-region').textContent = premise.region || 'Elliston, VA';
+      document.getElementById('priority-tier').textContent = premise.is_medical_priority ? 'Tier 1: Life Support Emergency' : 'Standard Residential';
+
+      if (power.has_active_outage) {
+        statusDisp.className = 'status-badge status-outage';
+        statusDisp.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> OUTAGE CONFIRMED';
+        statusSummary.textContent = 'Active power disruption recorded on distribution supply path.';
+      } else if (data.risk_assessment && data.risk_assessment.risk_score >= 0.5) {
+        statusDisp.className = 'status-badge status-warning';
+        statusDisp.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> SEVERE STORM WARNING';
+        statusSummary.textContent = 'Storm in direct trajectory; potential service impact imminent.';
+      } else {
+        statusDisp.className = 'status-badge status-normal';
+        statusDisp.innerHTML = '<i class="fa-solid fa-circle-check"></i> NORMAL SERVICE';
+        statusSummary.textContent = 'Feeder is energized and operating within normal voltage thresholds.';
+      }
+
+      // Upstream summary
+      const restoration = data.restoration || {};
+      const upSummary = document.getElementById('upstream-summary');
+      upSummary.textContent = restoration.upstream_dependencies_summary || 'All upstream equipment operational.';
+
+      // 2. Risk Assessment
+      const risk = data.risk_assessment || {};
+      const scorePct = Math.round((risk.risk_score || 0) * 100);
+      document.getElementById('risk-score-display').textContent = `${scorePct}%`;
+      document.getElementById('risk-band-display').textContent = `${risk.risk_band || 'Low'} Risk`;
+
+      const confDisp = document.getElementById('confidence-display');
+      confDisp.textContent = `${risk.confidence || 'Medium'} Confidence`;
+      confDisp.style.color = risk.confidence === 'High' ? '#34d399' : (risk.confidence === 'Medium' ? '#fbbf24' : '#f87171');
+
+      const riskBar = document.getElementById('risk-bar');
+      riskBar.style.width = `${scorePct}%`;
+      riskBar.style.background = scorePct >= 75 ? '#ef4444' : (scorePct >= 45 ? '#f59e0b' : '#10b981');
+
+      // Contributing Factors
+      const factorList = document.getElementById('risk-factors');
+      factorList.innerHTML = '';
+      (risk.contributing_factors || []).forEach(f => {
+        const li = document.createElement('li');
+        li.textContent = f;
+        factorList.appendChild(li);
+      });
+
+      // Sensitivity
+      const sensList = document.getElementById('risk-sensitivity');
+      sensList.innerHTML = '';
+      (risk.what_could_change || []).forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        sensList.appendChild(li);
+      });
+
+      // 3. Restoration (ETR)
+      const likelyBox = document.getElementById('etr-likely');
+      const rangeBox = document.getElementById('etr-range');
+      const durBox = document.getElementById('etr-duration');
+      const directCu = document.getElementById('val-direct-cu');
+      const ilm = document.getElementById('val-ilm');
+      const crews = document.getElementById('val-crews');
+      const etrAssumptions = document.getElementById('etr-assumptions');
+
+      if (restoration.has_active_outage && restoration.likely_restoration) {
+        likelyBox.textContent = restoration.likely_restoration;
+        rangeBox.textContent = `Estimated Range: ${restoration.earliest_restoration} – ${restoration.latest_restoration}`;
+        durBox.textContent = `~${restoration.duration_hours_likely} hours required`;
+
+        const bdown = restoration.labor_breakdown || {};
+        directCu.textContent = `${bdown.direct_cu_hours || 0.0}h direct CU`;
+        ilm.textContent = `${bdown.ilm_multiplier || 4.5}x ILM (Drive & Safety)`;
+        crews.textContent = `${bdown.active_crews || 1} Active Crew(s)`;
+
+        etrAssumptions.innerHTML = '';
+        (restoration.assumptions || []).forEach(a => {
+          const li = document.createElement('li');
+          li.textContent = a;
+          etrAssumptions.appendChild(li);
+        });
+      } else {
+        likelyBox.textContent = 'Service Operational';
+        rangeBox.textContent = 'No active outage ticket for this premise.';
+        durBox.textContent = '—';
+        directCu.textContent = '0.0h';
+        ilm.textContent = '4.5x baseline';
+        crews.textContent = `${document.getElementById('crew-select').value} Crews on stand-by`;
+
+        etrAssumptions.innerHTML = '<li>Restoration calculations activate immediately upon detected outage ticket.</li>';
+      }
+
+      // 4. Personalized Prep Actions
+      const prepList = document.getElementById('prep-checklist');
+      prepList.innerHTML = '';
+      (data.preparation_actions || []).forEach(act => {
+        const li = document.createElement('li');
+        li.textContent = act;
+        prepList.appendChild(li);
+      });
+
+      // Alert Eligibility
+      const elig = data.alert_eligibility || {};
+      document.getElementById('val-consent').textContent = elig.consent_status || 'Opted-in';
+      document.getElementById('val-quiet-hours').textContent = elig.quiet_hours_exempt ? 'Exempt (Emergency Life Support Protocol)' : 'Standard Monitoring';
+
+      // Recent Notifications
+      const notifFeed = document.getElementById('recent-notifications-list');
+      notifFeed.innerHTML = '';
+      const recent = data.recent_notifications || [];
+      if (recent.length === 0) {
+        notifFeed.innerHTML = '<div style="font-size: 0.78rem; color: #64748b;">No recent automated alerts dispatched to this premise.</div>';
+      } else {
+        recent.forEach(n => {
+          const div = document.createElement('div');
+          div.style.cssText = 'background: #0a1128; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #38bdf8; font-size: 0.8rem;';
+          div.innerHTML = `
+            <div style="font-weight: 700; color: #f8fafc;">${escapeHtml(n.title)}</div>
+            <div style="color: #94a3b8; font-size: 0.75rem;">${escapeHtml(n.body)}</div>
+            <div style="color: #64748b; font-size: 0.7rem; margin-top: 4px;">Sent ${escapeHtml(n.timestamp)}</div>
+          `;
+          notifFeed.appendChild(div);
+        });
+      }
+    }
+
+    // Scenario Injections
+    async function injectDamage(cuType) {
+      const desc = cuType === 'fuse_cutout' ? 'Blown fuse on upstream lateral tap' : 'Failed 50kVA pole-mounted transformer';
+      await fetch('/api/scenario/incident', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          asset_id: currentPremiseId,
+          asset_type: cuType === 'fuse_cutout' ? 'fuse' : 'transformer',
+          cu_type: cuType,
+          description: desc,
+          quantity: 1,
+          access_modifiers: ['backyard']
+        })
+      });
+      refreshCustomerData();
+    }
+
+    async function resolveAllDamage() {
+      // Fetch state, resolve all active incidents
+      const res = await fetch('/api/state');
+      const st = await res.json();
+      for (const inc of st.active_incidents) {
+        await fetch(`/api/scenario/incident/${inc.incident_id}`, { method: 'DELETE' });
+      }
+      refreshCustomerData();
+    }
+
+    async function updateCrews(count) {
+      await fetch('/api/scenario/controls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ crews_available: parseInt(count, 10) })
+      });
+      refreshCustomerData();
+    }
+
+    // WebSocket for Real-time Synchronization
+    function setupWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'state_update') {
+            refreshCustomerData();
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => {
+        setTimeout(setupWebSocket, 3000);
+      };
+    }
+  </script>
+</body>
+</html>

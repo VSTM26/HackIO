@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AEP Brand Colors -->
+    <color name="aep_blue">#003087</color>
+    <color name="aep_navy_dark">#0A1128</color>
+    <color name="aep_navy_surface">#131F3F</color>
+    <color name="aep_navy_card">#1C2A4F</color>
+    <color name="aep_navy_card_border">#2E4172</color>
+    
+    <color name="aep_gold">#FFB81C</color>
+    <color name="aep_gold_dark">#D49500</color>
+    <color name="aep_gold_light">#FFE180</color>
+    
+    <!-- Status / Severity Colors -->
+    <color name="severity_critical_bg">#3D1418</color>
+    <color name="severity_critical_text">#FF5C67</color>
+    <color name="severity_critical_border">#FF3B47</color>
+
+    <color name="severity_warning_bg">#3D2C0D</color>
+    <color name="severity_warning_text">#FFB81C</color>
+    <color name="severity_warning_border">#FFA200</color>
+
+    <color name="severity_advisory_bg">#0D2845</color>
+    <color name="severity_advisory_text">#4EA8DE</color>
+    <color name="severity_advisory_border">#2B72B8</color>
+
+    <color name="severity_restored_bg">#0E3326</color>
+    <color name="severity_restored_text">#48CAE4</color>
+    <color name="severity_restored_border">#06D6A0</color>
+
+    <!-- General UI Colors -->
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="text_muted">#64748B</color>
+    <color name="divider">#243356</color>
+    
+    <color name="status_connected">#10B981</color>
+    <color name="status_polling">#3B82F6</color>
+    <color name="status_error">#EF4444</color>
+    
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEP Storm Watch — Live Public Outage & Threat Monitor</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #060d1f;
+      color: #f1f5f9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Emergency Alert Bar */
+    .emergency-banner {
+      background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+      color: white;
+      padding: 10px 20px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+      z-index: 1001;
+      animation: alert-flash 1.2s infinite alternate;
+    }
+    @keyframes alert-flash {
+      0% { background: #dc2626; }
+      100% { background: #991b1b; }
+    }
+    .emergency-banner.visible { display: flex; }
+    .emergency-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Top Header */
+    header {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+    }
+    .brand span { color: #f59e0b; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 5px 12px;
+      border-radius: 9999px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: dot-pulse 1.2s infinite;
+    }
+    @keyframes dot-pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.6); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .apk-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: #f59e0b;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .apk-btn:hover { background: #d97706; color: white; }
+
+    /* Main Container */
+    .main-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 60px);
+      position: relative;
+    }
+
+    /* Map */
+    #map {
+      flex: 1;
+      height: 100%;
+      background: #060d1f;
+    }
+
+    /* Right Threat Side Panel */
+    .threat-sidebar {
+      width: 450px;
+      background: #0f172a;
+      border-left: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      z-index: 999;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.4);
+    }
+    .sidebar-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e293b;
+      background: #131d36;
+    }
+    .sidebar-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .sidebar-subtitle {
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    /* Threat Cards */
+    .threat-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .threat-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #3b82f6;
+    }
+    .threat-card.approaching {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .threat-card.approaching::before { background: #f59e0b; }
+    .threat-card.direct_hit {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+    }
+    .threat-card.direct_hit::before { background: #ef4444; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: white;
+    }
+    .card-id {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .status-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-badge.none { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+    .status-badge.approaching { background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .status-badge.direct_hit { background: rgba(239, 68, 68, 0.3); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.5); }
+
+    .eta-box {
+      background: #0f172a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+    .eta-label { color: #94a3b8; }
+    .eta-val { font-weight: 700; color: #38bdf8; }
+
+    .action-advisory {
+      font-size: 0.76rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+      background: rgba(2, 132, 199, 0.08);
+      border-left: 2px solid #0284c7;
+      padding: 6px 8px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* Live Feed Tab */
+    .feed-header {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin: 18px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feed-item {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      border-left: 3px solid #f59e0b;
+    }
+    .feed-time {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .feed-title {
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 2px;
+    }
+    .feed-body {
+      color: #cbd5e1;
+      font-size: 0.75rem;
+    }
+
+    /* Map Markers */
+    .radar-storm-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radar-pulse {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(249, 115, 22, 0.3);
+      border: 2px solid #ea580c;
+      animation: radar-wave 2s infinite ease-out;
+    }
+    @keyframes radar-wave {
+      0% { transform: scale(0.4); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .radar-center {
+      z-index: 2;
+      font-size: 32px;
+      filter: drop-shadow(0 0 10px rgba(234, 88, 12, 0.9));
+    }
+
+    .public-grid-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0284c7;
+      color: white;
+      font-size: 14px;
+      border: 2px solid white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      transition: all 0.3s;
+    }
+    .public-grid-marker.approaching {
+      background: #f59e0b;
+      box-shadow: 0 0 18px #f59e0b;
+      animation: grid-pulse 1.4s infinite;
+    }
+    .public-grid-marker.direct_hit {
+      background: #ef4444;
+      box-shadow: 0 0 24px #ef4444;
+      animation: grid-pulse 0.7s infinite;
+    }
+    @keyframes grid-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Emergency Broadcast Bar -->
+  <div class="emergency-banner" id="alert-banner">
+    <div class="emergency-banner-left">
+      <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+      <span id="alert-banner-text">EMERGENCY OUTAGE WARNING: Grid in predicted path of storm!</span>
+    </div>
+    <span style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px;">ACTIVE ADVISORY</span>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-bolt-lightning"></i>
+      AEP STORM WATCH <span>PUBLIC MONITOR</span>
+    </div>
+
+    <div class="header-right">
+      <div class="live-indicator">
+        <div class="pulse-dot"></div>
+        <span>Live Grid Telemetry</span>
+      </div>
+      <a href="/customer" target="_blank" class="apk-btn" style="background:#0284c7; color:white; border-color:#0284c7;">
+        <i class="fa-solid fa-user-shield"></i> Customer Portal
+      </a>
+      <a href="/download-apk" class="apk-btn">
+        <i class="fa-brands fa-android"></i> Get Mobile Alerts (APK)
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Body -->
+  <div class="main-body">
+
+    <!-- Live Map -->
+    <div id="map"></div>
+
+    <!-- Threat Side Panel -->
+    <div class="threat-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <i class="fa-solid fa-shield-halved"></i> Power Grids in Storm Path
+        </div>
+        <div class="sidebar-subtitle">
+          Real-time trajectory tracking & impact predictions
+        </div>
+      </div>
+
+      <div class="scroll-content">
+        <!-- Threatened Grids -->
+        <div id="threat-cards-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Live Notification Feed -->
+        <div class="feed-header">
+          <i class="fa-solid fa-tower-broadcast"></i> Dispatched Phone Alerts
+        </div>
+        <div id="notifications-feed">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let map;
+    let stormMarker = null;
+    let stormCircle = null;
+    let stormPathPolyline = null;
+    let vectorLines = [];
+    let gridMarkers = {};
+    let lastAlertId = 0;
+
+    // Audio Chime Synth
+    function playAlertChime() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      } catch (e) {}
+    }
+
+    // Init Leaflet Map
+    function initMap() {
+      map = L.map('map', {
+        center: [39.76, -84.18],
+        zoom: 11,
+        zoomControl: true
+      });
+
+      // Free Basemaps (No API Key Required)
+      const darkCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+        maxZoom: 16
+      });
+
+      const osmStandard = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      });
+
+      const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 18
+      });
+
+      darkCanvas.addTo(map);
+
+      // Basemap switcher
+      L.control.layers({
+        "🌙 Dark Canvas": darkCanvas,
+        "🗺️ OpenStreetMap": osmStandard,
+        "🛰️ Satellite Imagery": satellite
+      }, null, { position: 'topright' }).addTo(map);
+    }
+
+    // Connect WebSocket
+    function connectWebSocket() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${window.location.host}/ws`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'state_update') {
+          renderPublicState(data);
+        }
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWebSocket, 1500);
+      };
+    }
+
+    // Render Public State
+    function renderPublicState(data) {
+      const storm = data.storms[0];
+
+      if (storm) {
+        renderStorm(storm);
+      }
+
+      renderGridsAndThreats(data.grids, storm);
+      renderNotifications(data.notifications, data.new_alerts);
+    }
+
+    // Render Storm with Radar Aesthetics
+    function renderStorm(storm) {
+      const pos = [storm.current_pos.lat, storm.current_pos.lon];
+
+      if (!stormMarker) {
+        const icon = L.divIcon({
+          className: 'radar-marker-wrap',
+          html: '<div class="radar-storm-icon"><div class="radar-pulse"></div><div class="radar-center">🌀</div></div>',
+          iconSize: [60, 60],
+          iconAnchor: [30, 30]
+        });
+        stormMarker = L.marker(pos, { icon: icon }).addTo(map);
+      } else {
+        stormMarker.setLatLng(pos);
+      }
+
+      // Wind Radius
+      const radiusMeters = storm.radius_km * 1000;
+      if (!stormCircle) {
+        stormCircle = L.circle(pos, {
+          radius: radiusMeters,
+          color: '#f97316',
+          fillColor: '#ea580c',
+          fillOpacity: 0.18,
+          weight: 2
+        }).addTo(map);
+      } else {
+        stormCircle.setLatLng(pos);
+        stormCircle.setRadius(radiusMeters);
+      }
+
+      // Trajectory Path
+      if (storm.path && storm.path.length >= 2) {
+        const coords = storm.path.map(p => [p.lat, p.lon]);
+        if (!stormPathPolyline) {
+          stormPathPolyline = L.polyline(coords, {
+            color: '#fb923c',
+            weight: 3,
+            dashArray: '8, 8',
+            opacity: 0.7
+          }).addTo(map);
+        } else {
+          stormPathPolyline.setLatLngs(coords);
+        }
+      }
+    }
+
+    // Render Grids and Build Threat Cards
+    function renderGridsAndThreats(grids, storm) {
+      const threatContainer = document.getElementById('threat-cards-container');
+      threatContainer.innerHTML = '';
+
+      // Clear previous vector lines
+      vectorLines.forEach(l => map.removeLayer(l));
+      vectorLines = [];
+
+      let hasCriticalHit = false;
+      let criticalText = '';
+
+      // Sort: direct_hit first, then approaching, then none
+      const priority = { 'direct_hit': 0, 'approaching': 1, 'none': 2 };
+      const sorted = [...grids].sort((a, b) => (priority[a.threat_level] || 2) - (priority[b.threat_level] || 2));
+
+      sorted.forEach(grid => {
+        const latLng = [grid.lat, grid.lon];
+        let threatClass = grid.threat_level;
+        let iconHtml = grid.type === 'transformer' ? '<i class="fa-solid fa-bolt"></i>' : '<i class="fa-solid fa-tower-broadcast"></i>';
+
+        // Map Marker
+        if (!gridMarkers[grid.id]) {
+          const markerIcon = L.divIcon({
+            className: 'public-grid-wrap',
+            html: `<div class="public-grid-marker ${threatClass}">${iconHtml}</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+          });
+          const m = L.marker(latLng, { icon: markerIcon }).addTo(map);
+          m.bindPopup(`<b>${grid.name}</b><br>Status: <b>${grid.status.toUpperCase()}</b><br>Threat: <b>${threatClass.toUpperCase()}</b>`);
+          gridMarkers[grid.id] = m;
+        } else {
+          gridMarkers[grid.id].setIcon(L.divIcon({
+            className: 'public-grid-wrap',
+            html: `<div class="public-grid-marker ${threatClass}">${iconHtml}</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+          }));
+        }
+
+        // Draw threat connection line from storm to threatened grid
+        if (storm && (threatClass === 'approaching' || threatClass === 'direct_hit')) {
+          const stormPos = [storm.current_pos.lat, storm.current_pos.lon];
+          const color = threatClass === 'direct_hit' ? '#ef4444' : '#f59e0b';
+          const line = L.polyline([stormPos, latLng], {
+            color: color,
+            weight: 2,
+            dashArray: '4, 4',
+            opacity: 0.6
+          }).addTo(map);
+          vectorLines.push(line);
+        }
+
+        // Check for Banner
+        if (threatClass === 'direct_hit') {
+          hasCriticalHit = true;
+          criticalText = `🚨 ACTIVE IMPACT: ${grid.name} is currently experiencing severe storm force winds. High outage probability.`;
+        } else if (threatClass === 'approaching' && !hasCriticalHit) {
+          criticalText = `⚠️ STORM WARNING: ${grid.name} is in the predicted path. Arrival: ${grid.predicted_arrival}.`;
+        }
+
+        // Threat Card for sidebar (only if approaching or direct_hit, or top regional stations)
+        if (threatClass !== 'none' || grid.type === 'substation') {
+          const card = document.createElement('div');
+          card.className = `threat-card ${threatClass}`;
+          card.innerHTML = `
+            <div class="card-top">
+              <div>
+                <div class="card-title">${escapeHtml(grid.name)}</div>
+                <div class="card-id">${grid.id} &bull; ${grid.customers_count.toLocaleString()} Customers</div>
+              </div>
+              <span class="status-badge ${threatClass}">${threatClass.replace('_', ' ')}</span>
+            </div>
+
+            <div class="eta-box">
+              <span class="eta-label"><i class="fa-regular fa-clock"></i> Projected Arrival:</span>
+              <span class="eta-val">${grid.predicted_arrival || 'Distance: ' + (grid.distance_km || '—') + ' km'}</span>
+            </div>
+
+            <div class="action-advisory">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              ${threatClass === 'direct_hit' 
+                ? 'Outage detected. Emergency repair crews on standby. Stay indoors.' 
+                : 'Charge mobile devices, secure loose outdoor items, prepare backup medical power.'}
+            </div>
+          `;
+          threatContainer.appendChild(card);
+        }
+      });
+
+      // Update Emergency Banner
+      const banner = document.getElementById('alert-banner');
+      if (criticalText) {
+        document.getElementById('alert-banner-text').innerText = criticalText;
+        banner.classList.add('visible');
+      } else {
+        banner.classList.remove('visible');
+      }
+    }
+
+    // Render Notifications Feed
+    function renderNotifications(notifications, newAlerts) {
+      if (newAlerts && newAlerts.length > 0) {
+        newAlerts.forEach(alert => {
+          if (alert.id > lastAlertId) {
+            lastAlertId = alert.id;
+            playAlertChime();
+          }
+        });
+      }
+
+      const feedContainer = document.getElementById('notifications-feed');
+      feedContainer.innerHTML = '';
+
+      if (!notifications || notifications.length === 0) {
+        feedContainer.innerHTML = '<div style="color: #64748b; font-size: 0.75rem;">No alerts dispatched yet.</div>';
+        return;
+      }
+
+      notifications.slice(0, 8).forEach(notif => {
+        const item = document.createElement('div');
+        item.className = 'feed-item';
+        item.innerHTML = `
+          <div class="feed-time"><i class="fa-regular fa-clock"></i> ${notif.timestamp} &bull; ${notif.grid_id}</div>
+          <div class="feed-title">${notif.title}</div>
+          <div class="feed-body">${escapeHtml(notif.body)}</div>
+        `;
+        feedContainer.appendChild(item);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      connectWebSocket();
+    });
+  </script>
+</body>
+</html>

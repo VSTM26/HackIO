@@ -1,11 +1,21 @@
-"""
-train.py - Offline training and calibration for outage risk prediction models.
+"""train.py - Synthetic Benchmark Harness and Offline Heuristic Calibration.
 
-Owner: Person 2 (Predictions & Geospatial)
-Layer: Layer 2 Analytics (analytics/predictive)
+DISCLAIMER & METHODOLOGY NOTE:
+------------------------------
+This script generates synthetic benchmark scenarios to test pipeline behavior and evaluate
+parameter sensitivity under simulated storm events. It is NOT trained or calibrated on
+real historical utility outage data.
 
-Generates synthetic historical storm outage records, trains/calibrates model parameters,
-and saves versioned model artifacts to analytics/predictive/models/.
+In the HackOHI/O challenge data, historical damage points from ARCOS (Hurricane Helene)
+are geographic point observations without complete non-outage negative controls or AMI
+telemetry timelines across all circuits. Consequently, the operational risk model
+is implemented as a transparent, physics-informed vulnerability heuristic based on:
+  1. Wind gust velocity and distance relative to the storm radius envelope
+  2. Asset construction type (Overhead vs Underground from Customer_Clip)
+  3. Upstream protective device depth from matched_upstream.txt
+  4. Regional historical damage incident density
+
+Any accuracy or calibration metrics reported here apply solely to the synthetic benchmark suite.
 """
 
 from __future__ import annotations
@@ -138,4 +148,4 @@ def load_model(filename: str = "outage_risk_v1.json") -> Dict[str, Any]:
 
 if __name__ == "__main__":
     artifact = train_and_save_model()
-    print("Model trained and saved successfully:", artifact["model_name"])
+    print("Model benchmark config saved successfully:", artifact["model_name"])

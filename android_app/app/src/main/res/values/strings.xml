@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Storm Assistant</string>
+    <string name="app_tagline">AEP Grid &amp; Outage Warning System</string>
+    <string name="channel_name">Critical Grid Alerts</string>
+    <string name="channel_description">High-priority heads-up alerts for impending substation impacts, storm warnings, and outages.</string>
+    
+    <string name="default_server_url">http://172.31.92.101:8000</string>
+    <string name="default_endpoint">/api/notifications</string>
+    
+    <string name="btn_test_notification">⚡ Test Notification</string>
+    <string name="btn_poll_now">🔄 Poll Now</string>
+    <string name="btn_simulate_alert">➕ Simulate Warning</string>
+    <string name="auto_poll_label">Live Polling (Every 5s)</string>
+    
+    <string name="empty_feed_title">No Active Alerts</string>
+    <string name="empty_feed_desc">Power grid telemetry is normal. System is monitoring for impending storm and substation hazards.</string>
+</resources>

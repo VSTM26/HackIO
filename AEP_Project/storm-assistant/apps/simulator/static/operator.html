@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storm Assistant — Operator Control Center</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0b1329;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Nav */
+    header {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+    }
+    .brand span { color: #f59e0b; }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+    }
+    .btn-primary { background: #0284c7; color: white; }
+    .btn-primary:hover { background: #0369a1; }
+    .btn-gold { background: #d97706; color: white; }
+    .btn-gold:hover { background: #b45309; }
+    .btn-dark { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .btn-dark:hover { background: #334155; color: white; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 58px);
+      position: relative;
+    }
+
+    /* Left Control Sidebar */
+    .sidebar {
+      width: 440px;
+      background: #0f172a;
+      border-right: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 999;
+      box-shadow: 4px 0 16px rgba(0,0,0,0.3);
+    }
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-box {
+      padding: 16px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    /* Tool selector */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .tool-btn {
+      padding: 10px 8px;
+      border-radius: 8px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tool-btn i { font-size: 1.1rem; }
+    .tool-btn:hover { background: #334155; }
+    .tool-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    .help-banner {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px dashed rgba(56, 189, 248, 0.3);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #93c5fd;
+      line-height: 1.4;
+    }
+
+    /* Slider controls */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+    .form-label span { color: #38bdf8; font-weight: 700; }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+    }
+    input[type="text"] {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: white;
+      font-size: 0.85rem;
+    }
+
+    /* Playback buttons */
+    .playback-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .playback-bar .btn { flex: 1; justify-content: center; }
+
+    /* Threat list */
+    .grid-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .grid-card.approaching {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .grid-card.direct_hit {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    }
+    .grid-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .grid-name {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #f8fafc;
+    }
+    .grid-meta {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+    .threat-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .threat-tag.none { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+    .threat-tag.approaching { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .threat-tag.direct_hit { background: rgba(239, 68, 68, 0.25); color: #ef4444; }
+
+    /* Map */
+    #map {
+      flex: 1;
+      height: 100%;
+      background: #0f172a;
+    }
+
+    /* Custom Leaflet Markers */
+    .storm-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      filter: drop-shadow(0 0 8px rgba(255, 100, 0, 0.9));
+      animation: storm-pulse 2s infinite ease-in-out;
+    }
+    @keyframes storm-pulse {
+      0% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.15) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
+    .grid-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #0284c7;
+      color: white;
+      font-size: 13px;
+      border: 2px solid white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .grid-marker.approaching {
+      background: #f59e0b;
+      box-shadow: 0 0 12px #f59e0b;
+      animation: pulse-ring 1.5s infinite;
+    }
+    .grid-marker.direct_hit {
+      background: #ef4444;
+      box-shadow: 0 0 16px #ef4444;
+      animation: pulse-ring 0.8s infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-cloud-bolt"></i>
+      STORM ASSISTANT <span>OPERATOR</span>
+    </div>
+
+    <div class="nav-actions">
+      <span class="badge" id="ws-badge">
+        <i class="fa-solid fa-circle"></i> Live Sync Active
+      </span>
+      <a href="/customer" target="_blank" class="btn btn-primary">
+        <i class="fa-solid fa-user-shield"></i> Customer Portal
+      </a>
+      <a href="/user" target="_blank" class="btn btn-dark">
+        <i class="fa-solid fa-desktop"></i> Public View
+      </a>
+      <a href="/download-apk" class="btn btn-gold">
+        <i class="fa-brands fa-android"></i> Download Phone APK
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Work Area -->
+  <div class="app-container">
+
+    <!-- Control Sidebar -->
+    <div class="sidebar">
+
+      <!-- Tool Selector -->
+      <div class="panel-box">
+        <div class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Mode & Actions</div>
+        <div class="tool-grid">
+          <button class="tool-btn active" id="tool-inspect" onclick="setMode('inspect')">
+            <i class="fa-solid fa-hand-pointer"></i>
+            <span>Inspect</span>
+          </button>
+          <button class="tool-btn" id="tool-draw" onclick="setMode('draw')">
+            <i class="fa-solid fa-bezier-curve"></i>
+            <span>Draw Path</span>
+          </button>
+          <button class="tool-btn" id="tool-grid" onclick="setMode('grid')">
+            <i class="fa-solid fa-tower-broadcast"></i>
+            <span>Add Grid</span>
+          </button>
+        </div>
+
+        <div class="help-banner" id="help-text">
+          <i class="fa-solid fa-info-circle"></i> <b>Inspect Mode:</b> Click on any storm or grid to inspect details. Drag the storm slider below to scrub trajectory.
+        </div>
+      </div>
+
+      <!-- Storm Configuration -->
+      <div class="panel-box">
+        <div class="section-title"><i class="fa-solid fa-hurricane"></i> Storm Trajectory & Control</div>
+
+        <div class="form-group">
+          <div class="form-label">
+            <span>Storm Name</span>
+          </div>
+          <input type="text" id="storm-name-input" value="Storm Rowan" onchange="updateStormConfig()" />
+        </div>
+
+        <!-- Scrubber Progress -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Trajectory Progress</span>
+            <span id="progress-val">5%</span>
+          </div>
+          <input type="range" id="progress-slider" min="0" max="100" value="5" oninput="onProgressChange(this.value)" />
+        </div>
+
+        <!-- Playback buttons -->
+        <div class="playback-bar">
+          <button class="btn btn-primary" id="play-btn" onclick="togglePlay()">
+            <i class="fa-solid fa-play"></i> Play Along Path
+          </button>
+          <button class="btn btn-dark" onclick="resetStorm()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button class="btn btn-danger" onclick="clearStormPath()">
+            <i class="fa-solid fa-trash-can"></i> Clear
+          </button>
+        </div>
+
+        <!-- Wind Radius -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Wind Radius</span>
+            <span id="radius-val">35 km</span>
+          </div>
+          <input type="range" id="radius-slider" min="10" max="150" value="35" oninput="onRadiusChange(this.value)" />
+        </div>
+
+        <!-- Speed -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Movement Speed</span>
+            <span id="speed-val">45 km/h</span>
+          </div>
+          <input type="range" id="speed-slider" min="10" max="120" value="45" oninput="onSpeedChange(this.value)" />
+        </div>
+
+        <!-- Peak Gust -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Peak Wind Gust</span>
+            <span id="gust-val">98 km/h</span>
+          </div>
+          <input type="range" id="gust-slider" min="50" max="180" value="98" oninput="onGustChange(this.value)" />
+        </div>
+      </div>
+
+      <!-- Live Threat Matrix & Notifications -->
+      <div class="panel-box" style="flex: 1;">
+        <div class="section-title">
+          <i class="fa-solid fa-tower-observation"></i> Power Grid Threat Monitor
+        </div>
+        <div id="grid-list">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Map Canvas -->
+    <div id="map"></div>
+
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // State
+    let currentMode = 'inspect';
+    let simulationState = { storms: [], grids: [], notifications: [] };
+    let activeStormId = 'storm-rowan';
+    let drawnWaypoints = [];
+    let isDrawing = false;
+
+    // Leaflet Layers
+    let map;
+    let stormMarker = null;
+    let stormCircle = null;
+    let stormPathLine = null;
+    let gridMarkers = {};
+    let drawPolyline = null;
+    let drawPoints = [];
+
+    // Initialize Map
+    function initMap() {
+      map = L.map('map', {
+        center: [39.76, -84.18],
+        zoom: 11,
+        zoomControl: true
+      });
+
+      // Free Basemaps (No API Key Required)
+      const darkCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+        maxZoom: 16
+      });
+
+      const osmStandard = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      });
+
+      const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 18
+      });
+
+      darkCanvas.addTo(map);
+
+      // Basemap switcher
+      L.control.layers({
+        "🌙 Dark Canvas": darkCanvas,
+        "🗺️ OpenStreetMap": osmStandard,
+        "🛰️ Satellite Imagery": satellite
+      }, null, { position: 'topright' }).addTo(map);
+
+      // Click handler for map modes
+      map.on('click', handleMapClick);
+    }
+
+    // Set UI Mode
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tool-' + mode).classList.add('active');
+
+      const help = document.getElementById('help-text');
+      if (mode === 'inspect') {
+        help.innerHTML = '<i class="fa-solid fa-info-circle"></i> <b>Inspect Mode:</b> Click on any storm or grid to inspect details. Drag the storm slider below to scrub trajectory.';
+        if (drawPolyline) { map.removeLayer(drawPolyline); drawPolyline = null; }
+        drawPoints.forEach(p => map.removeLayer(p));
+        drawPoints = [];
+        drawnWaypoints = [];
+        isDrawing = false;
+      } else if (mode === 'draw') {
+        help.innerHTML = '<i class="fa-solid fa-pencil"></i> <b>Draw Path Mode:</b> Click anywhere on the map to place path waypoints. When finished, click <b>Finish Path</b>.';
+        isDrawing = true;
+        drawnWaypoints = [];
+      } else if (mode === 'grid') {
+        help.innerHTML = '<i class="fa-solid fa-plus-circle"></i> <b>Add Grid Mode:</b> Click anywhere on the map to place a new substation or power grid.';
+      }
+    }
+
+    // Map Click Dispatcher
+    async function handleMapClick(e) {
+      if (currentMode === 'draw') {
+        const pt = { lat: e.latlng.lat, lon: e.latlng.lng };
+        drawnWaypoints.push(pt);
+
+        // Render point marker
+        const m = L.circleMarker([pt.lat, pt.lon], { radius: 6, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 1 }).addTo(map);
+        drawPoints.push(m);
+
+        // Update drawn polyline
+        const coords = drawnWaypoints.map(p => [p.lat, p.lon]);
+        if (!drawPolyline) {
+          drawPolyline = L.polyline(coords, { color: '#38bdf8', dashArray: '6, 6', weight: 3 }).addTo(map);
+        } else {
+          drawPolyline.setLatLngs(coords);
+        }
+
+        // When at least 2 points exist, save path to active storm
+        if (drawnWaypoints.length >= 2) {
+          await fetch(`/api/storms/${activeStormId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: drawnWaypoints, progress: 0.0 })
+          });
+        }
+      } else if (currentMode === 'grid') {
+        const gridName = prompt("Enter Power Grid / Substation Name:", "North Dayton Distribution Station");
+        if (gridName) {
+          const id = "GRID-" + Math.floor(100 + Math.random() * 900);
+          await fetch('/api/grids', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: id,
+              name: gridName,
+              type: "substation",
+              lat: e.latlng.lat,
+              lon: e.latlng.lng,
+              customers_count: 2500
+            })
+          });
+          setMode('inspect');
+        }
+      }
+    }
+
+    // Connect WebSocket
+    function connectWebSocket() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${window.location.host}/ws`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'state_update') {
+          renderSimulationState(data);
+        }
+      };
+
+      ws.onclose = () => {
+        document.getElementById('ws-badge').style.color = '#ef4444';
+        document.getElementById('ws-badge').innerHTML = '<i class="fa-solid fa-circle"></i> Reconnecting...';
+        setTimeout(connectWebSocket, 1500);
+      };
+    }
+
+    // Render Simulation State
+    function renderSimulationState(data) {
+      simulationState = data;
+      const storm = data.storms.find(s => s.id === activeStormId) || data.storms[0];
+
+      if (storm) {
+        activeStormId = storm.id;
+        document.getElementById('storm-name-input').value = storm.name;
+        document.getElementById('radius-slider').value = storm.radius_km;
+        document.getElementById('radius-val').innerText = `${storm.radius_km} km`;
+        document.getElementById('speed-slider').value = storm.speed_kmh;
+        document.getElementById('speed-val').innerText = `${storm.speed_kmh} km/h`;
+        document.getElementById('gust-slider').value = storm.peak_gust_kmh || 95;
+        document.getElementById('gust-val').innerText = `${storm.peak_gust_kmh || 95} km/h`;
+
+        const pct = Math.round(storm.progress * 100);
+        document.getElementById('progress-slider').value = pct;
+        document.getElementById('progress-val').innerText = `${pct}%`;
+
+        const playBtn = document.getElementById('play-btn');
+        if (storm.is_playing) {
+          playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+          playBtn.classList.replace('btn-primary', 'btn-danger');
+        } else {
+          playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play Along Path';
+          playBtn.classList.replace('btn-danger', 'btn-primary');
+        }
+
+        renderStormMap(storm);
+      }
+
+      renderGrids(data.grids);
+    }
+
+    // Render Storm on Map
+    function renderStormMap(storm) {
+      const pos = [storm.current_pos.lat, storm.current_pos.lon];
+
+      // Storm Center Icon
+      if (!stormMarker) {
+        const stormIcon = L.divIcon({
+          className: 'storm-marker-wrapper',
+          html: '<div class="storm-icon">🌀</div>',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+        stormMarker = L.marker(pos, { icon: stormIcon }).addTo(map);
+      } else {
+        stormMarker.setLatLng(pos);
+      }
+
+      // Storm Radius Circle
+      const radiusMeters = storm.radius_km * 1000;
+      if (!stormCircle) {
+        stormCircle = L.circle(pos, {
+          radius: radiusMeters,
+          color: '#f97316',
+          fillColor: '#ea580c',
+          fillOpacity: 0.22,
+          weight: 2
+        }).addTo(map);
+      } else {
+        stormCircle.setLatLng(pos);
+        stormCircle.setRadius(radiusMeters);
+      }
+
+      // Storm Trajectory Path
+      if (storm.path && storm.path.length >= 2) {
+        const pathCoords = storm.path.map(p => [p.lat, p.lon]);
+        if (!stormPathLine) {
+          stormPathLine = L.polyline(pathCoords, {
+            color: '#fb923c',
+            weight: 3,
+            dashArray: '8, 8',
+            opacity: 0.8
+          }).addTo(map);
+        } else {
+          stormPathLine.setLatLngs(pathCoords);
+        }
+      }
+    }
+
+    // Render Grids
+    function renderGrids(grids) {
+      const listEl = document.getElementById('grid-list');
+      listEl.innerHTML = '';
+
+      grids.forEach(grid => {
+        // Map Marker
+        const latLng = [grid.lat, grid.lon];
+        let threatClass = grid.threat_level;
+        let iconHtml = grid.type === 'transformer' ? '<i class="fa-solid fa-bolt"></i>' : '<i class="fa-solid fa-tower-broadcast"></i>';
+
+        if (!gridMarkers[grid.id]) {
+          const markerIcon = L.divIcon({
+            className: 'grid-marker-wrapper',
+            html: `<div class="grid-marker ${threatClass}">${iconHtml}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+          const m = L.marker(latLng, { icon: markerIcon }).addTo(map);
+          m.bindPopup(`<b>${grid.name}</b><br>ID: ${grid.id}<br>Type: ${grid.type}<br>Customers: ${grid.customers_count}`);
+          gridMarkers[grid.id] = m;
+        } else {
+          gridMarkers[grid.id].setIcon(L.divIcon({
+            className: 'grid-marker-wrapper',
+            html: `<div class="grid-marker ${threatClass}">${iconHtml}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          }));
+        }
+
+        // Sidebar Card
+        const card = document.createElement('div');
+        card.className = `grid-card ${threatClass}`;
+        card.innerHTML = `
+          <div class="grid-header">
+            <span class="grid-name">${escapeHtml(grid.name)}</span>
+            <span class="threat-tag ${threatClass}">${threatClass.replace('_', ' ')}</span>
+          </div>
+          <div class="grid-meta">
+            <span>Distance: <b>${grid.distance_km != null ? grid.distance_km + ' km' : '—'}</b></span>
+            <span>Arrival: <b>${escapeHtml(grid.predicted_arrival || 'None')}</b></span>
+          </div>
+          <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
+            <button class="btn btn-dark" style="font-size: 0.72rem; padding: 4px 8px;" onclick="testAlert('${grid.id}')">
+              <i class="fa-solid fa-paper-plane"></i> Blast Alert
+            </button>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // Actions
+    async function onProgressChange(val) {
+      document.getElementById('progress-val').innerText = `${val}%`;
+      const progress = parseFloat(val) / 100.0;
+      await fetch(`/api/storms/${activeStormId}/progress?progress=${progress}`, { method: 'POST' });
+    }
+
+    async function onRadiusChange(val) {
+      document.getElementById('radius-val').innerText = `${val} km`;
+      await fetch(`/api/storms/${activeStormId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ radius_km: parseFloat(val) })
+      });
+    }
+
+    async function onSpeedChange(val) {
+      document.getElementById('speed-val').innerText = `${val} km/h`;
+      await fetch(`/api/storms/${activeStormId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speed_kmh: parseFloat(val) })
+      });
+    }
+
+    async function onGustChange(val) {
+      document.getElementById('gust-val').innerText = `${val} km/h`;
+      await fetch(`/api/storms/${activeStormId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peak_gust_kmh: parseFloat(val) })
+      });
+    }
+
+    async function updateStormConfig() {
+      const name = document.getElementById('storm-name-input').value;
+      await fetch(`/api/storms/${activeStormId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name })
+      });
+    }
+
+    async function togglePlay() {
+      await fetch(`/api/storms/${activeStormId}/play`, { method: 'POST' });
+    }
+
+    async function resetStorm() {
+      await fetch(`/api/storms/${activeStormId}/progress?progress=0.0`, { method: 'POST' });
+    }
+
+    async function clearStormPath() {
+      if (confirm("Reset and clear this storm's trajectory path?")) {
+        await fetch(`/api/storms/${activeStormId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: [], progress: 0.0 })
+        });
+        setMode('draw');
+      }
+    }
+
+    async function testAlert(gridId) {
+      await fetch('/api/notifications/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grid_id: gridId, storm_id: activeStormId })
+      });
+    }
+
+    // Run on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      connectWebSocket();
+    });
+  </script>
+</body>
+</html>
