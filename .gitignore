@@ -231,7 +231,6 @@ data/extracted/
 *.cpg
 AEP_Project/storm-assistant/data/raw/
 AEP_Project/storm-assistant/data/extracted/
-AEP_Project/storm-assistant/data/challenge/raw/
 AEP_Project/storm-assistant/data/challenge/extracted/
 *.apk
 StormAlert.apk
